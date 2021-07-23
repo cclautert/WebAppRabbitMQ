@@ -24,14 +24,22 @@ namespace AppRabbitMQ
                 var consumer = new EventingBasicConsumer(channel);
                 consumer.Received += (model, ea) =>
                 {
-                    var body = ea.Body.ToArray();
-                    var message = Encoding.UTF8.GetString(body);
-                    var ordem = JsonSerializer.Deserialize<Ordem>(message);
+                    try
+                    {
+                        var body = ea.Body.ToArray();
+                        var message = Encoding.UTF8.GetString(body);
+                        var ordem = JsonSerializer.Deserialize<Ordem>(message);
 
-                    Console.WriteLine($" Ordem: {ordem.Numero} | {ordem.Produto} | {ordem.ValorTotal:N2}");
+                        Console.WriteLine($" Ordem: {ordem.Numero} | {ordem.Produto} | {ordem.ValorTotal:N2}");
+
+                        channel.BasicAck(ea.DeliveryTag, false);
+                    }catch(Exception ex)
+                    {
+                        channel.BasicNack(ea.DeliveryTag, false, true);
+                    }
                 };
                 channel.BasicConsume(queue: "OrdemQueue",
-                                     autoAck: true,
+                                     autoAck: false,
                                      consumer: consumer);
 
                 Console.WriteLine(" Press [enter] to exit.");
